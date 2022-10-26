@@ -1,0 +1,28 @@
+#
+# $ recon -c all-processors.yaml -q 'select * from files'
+#
+source:
+  computed_fields:
+    # diagnose what of content in a file: binary, or text variants: utf8, etc.
+    byte_type: true
+    
+    # is content binary?
+    is_binary: true
+    
+    # output of running `file` against the file
+    file_magic: true
+
+    # digest
+    crc32: true
+
+    # digest
+    sha256: true
+
+    # digest
+    sha512: true
+
+    # digest
+    md5: true
+
+    # simhash allows for similarity test with hashes instead of full file content
+    simhash: true

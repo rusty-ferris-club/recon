@@ -1,0 +1,11 @@
+source:
+  root: "."
+  query: select * from files
+  computed_fields:
+    bytes_type: true
+    is_binary: true
+    crc32: true
+    sha256: true
+    sha512: true
+    md5: true
+    simhash: true

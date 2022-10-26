@@ -1,0 +1,21 @@
+```console
+$ recon --help
+SQL over files with security processing and tests
+
+Usage: recon[..] [OPTIONS]
+
+Options:
+  -c, --config <CONFIG_FILE>  Point to a configuration
+  -r, --root <ROOT>           Target folder to scan
+  -q, --query <SQL>           Query with SQL [default: "select * from files"]
+  -f, --file <DB_FILE>        Use a specific DB file (file or :inmem: for in memory) [default: recon.db]
+  -d, --delete                Delete existing cache database before running
+  -u, --update                Update existing cache database
+      --xargs                 Output as xargs formatted list
+      --json                  Output as JSON
+      --csv                   Output as CSV
+      --verbose               Show logs
+  -h, --help                  Print help information
+  -V, --version               Print version information
+
+```

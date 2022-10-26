@@ -1,0 +1,6 @@
+```console
+$ recon -d -q 'select abs_path,size from files where 1=0'
+
+0 files in [..]ms
+
+```

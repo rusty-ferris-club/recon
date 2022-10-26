@@ -1,0 +1,9 @@
+#
+# $ recon -c custom-walking.yaml
+#
+source:
+  # walk files from the "src/" folder
+  root: "src/"
+
+  # select rust files only
+  query: select * from files where ext = rs

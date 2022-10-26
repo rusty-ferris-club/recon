@@ -1,0 +1,107 @@
+# source:
+#   # walk files from this root
+#   root: "."
+
+#   # you can optionally write your query here for convenience instead of supplying via `-q` flag
+#   query: select * from files
+
+#   # these fields will be computed while walking the tree, and using the sourcing query
+#   # you can use any of the fields described in `computed_fields`
+#   default_fields:
+#     crc32: true
+
+#   # run this before running computed fields to spend resources only on files you need
+#   before_computed_fields_query: select * from files
+
+#   # these fields will be computed after walking the tree, and after the initial sourcing query
+#   # but before your given query
+#   computed_fields:
+#     # diagnose what of content in a file: binary, or text variants: utf8, etc.
+#     byte_type: true
+    
+#     # is content binary?
+#     is_binary: true
+    
+#     # output of running `file` against the file
+#     file_magic: true
+
+#     # digest
+#     crc32: true
+
+#     # digest
+#     sha256: true
+
+#     # digest
+#     sha512: true
+
+#     # digest
+#     md5: true
+
+#     # simhash allows for similarity test with hashes instead of full file content
+#     simhash: true
+    
+#     # array of extensions to test against
+#     is_archive: 
+#     - zip
+
+#     # array of extensions to test against
+#     is_document:
+#     - md
+#     - txt
+
+#     # array of extensions to test against
+#     is_media:
+#     - png
+#     - svg
+
+#     # array of extensions to test against
+#     is_code:
+#     - rs
+
+#     # array of locations for standard gitignore files
+#     is_ignored:
+#     - .gitignore
+    
+#     # array of checksums to match against
+#     crc32_match:
+#     - foo
+
+#     # array of digests to match against
+#     sha256_match:
+#     - foo
+
+#     # array of digests to match against
+#     sha512_match:
+#     - foo
+
+#     # array of digests to match against
+#     md5_match:
+#     - foo
+
+#     # array of hashes to match against
+#     simhash_match:
+#     - foo
+
+#     # array of regex to match against file path
+#     path_match:
+#     - foo
+
+#     # array of regex to match against file content
+#     content_match:
+#     - foo
+
+#     # match YARA rules against file content
+#     yara_match: |
+#       rule AsciiExample {
+#       strings:
+#         // A string to match -- default is ascii
+#         $ascii_string = "hello"
+
+#       condition:
+#         // The condition to match
+#         $ascii_string
+#       }
+
+
+
+

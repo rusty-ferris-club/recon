@@ -1,0 +1,51 @@
+#
+# $ recon -c find-log4shell.yaml
+#
+# in this example:
+# - a stored result query in configuration to make a self-contained bundle.
+# - matching with a cheap md5 digest, and only against a subset of files for cheaper run.
+#   - this is done by specifying a subset of files that go into computed fields
+#
+source:
+  root: "."
+  query: select path,md5 from files where md5_match is not null
+
+  before_computed_fields_query: "select * from files where ext = 'class'"
+  computed_fields:
+    md5: true
+    md5_match:
+    # JndiLookup.class
+    # https://gist.github.com/xanda/7ac663984f3560f0b39b18437362d924
+    - 662118846c452c4973eca1057859ad61 #2.0-beta9
+    - 662118846c452c4973eca1057859ad61 #2.0-rc1
+    - 1daf21d95a208cfce994704824f46fae #2.0-rc2
+    - 62c82ad7c1ec273a683de928c93abbe9 #2
+    - 2365c12b4a7c5fa5d7903dd90ca9e463 #2.0.1
+    - 5c727238e74ffac28315c36df27ef7cc #2.0.2
+    - 8ededbb1646c1a4dd6cdb93d9a01f43c #2.1
+    - 8ededbb1646c1a4dd6cdb93d9a01f43c #2.2
+    - 8ededbb1646c1a4dd6cdb93d9a01f43c #2.3
+    - da195a29e34e02e9e4c6663ce0b8f243 #2.4
+    - da195a29e34e02e9e4c6663ce0b8f243 #2.4.1
+    - da195a29e34e02e9e4c6663ce0b8f243 #2.5
+    - 766bf6b755adee673838fdf968c15079 #2.6
+    - 766bf6b755adee673838fdf968c15079 #2.6.1
+    - 766bf6b755adee673838fdf968c15079 #2.6.2
+    - 4618c4bea52a4e2e2693b7d91b019c71 #2.7
+    - fe963defc63d2df86d3d4e2f160939ab #2.8
+    - fe963defc63d2df86d3d4e2f160939ab #2.8.1
+    - 641fd7ae76e95b35f02c55ffbf430e6b #2.8.2
+    - 88568653545359ace753f19a72b18208 #2.9.0
+    - 88568653545359ace753f19a72b18208 #2.9.1
+    - 88568653545359ace753f19a72b18208 #2.10.0
+    - 88568653545359ace753f19a72b18208 #2.11.0
+    - 88568653545359ace753f19a72b18208 #2.11.1
+    - 88568653545359ace753f19a72b18208 #2.11.2
+    - 4cb3a0271f77c02fd2de3144a729ab70 #2.12.0
+    - 4cb3a0271f77c02fd2de3144a729ab70 #2.12.1
+    - 7b2cf8f2e9d85014884add490878a600 #2.13.0
+    - 7b2cf8f2e9d85014884add490878a600 #2.13.1
+    - 7b2cf8f2e9d85014884add490878a600 #2.13.2
+    - 7b2cf8f2e9d85014884add490878a600 #2.13.3
+    - 737b430fac6caef7c485c9c47f0f9104 #2.14.0
+    - 737b430fac6caef7c485c9c47f0f9104 #2.14.1

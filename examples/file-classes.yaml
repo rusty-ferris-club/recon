@@ -1,0 +1,64 @@
+# cwd: recon/recon/src
+#
+# $ recon -r ../tests -c file-classes.yaml -q 'select path, is_document,is_ignored from files'
+# ┌────────────────────────────────────────────┬─────────────┬────────────┐
+# │ path                                       │ is_document │ is_ignored │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/query-nonempty.trycmd         │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/query-empty.trycmd            │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/help.trycmd                   │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/query-nonempty.in/recon.db    │ 0           │ 1          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/query-nonempty.in/test.txt    │ 1           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/digests.in/recon.db           │ 0           │ 1          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/digests.in/config.yaml        │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/digests.in/test.txt           │ 1           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/digests.in/recon-terminal.gif │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/query-empty.in/recon.db       │ 0           │ 1          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cmd/digests.trycmd                │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/cli_tests.rs                      │ 0           │ 0          │
+# ├────────────────────────────────────────────┼─────────────┼────────────┤
+# │ ../tests/.gitattributes                    │ null        │ 0          │
+# └────────────────────────────────────────────┴─────────────┴────────────┘
+# 13 files in 36.621791ms
+#
+# in this example:
+# - you determine file classes by their extension
+# - performed in `default_fields` (for all walked files), so you can use these fields
+#   in the future for more creatively selecting a subset of files in `computed_fields`
+#   e.g. "perform yara matches only against documents, 
+#         and I also gave you a definition of what is a document earlier"
+#
+source:
+  default_fields:
+    is_archive: 
+    - zip
+
+    # array of extensions to test against
+    is_document:
+    - md
+    - txt
+
+    # array of extensions to test against
+    is_media:
+    - png
+    - svg
+
+    # array of extensions to test against
+    is_code:
+    - rs
+
+    # array of locations for standard gitignore files
+    is_ignored:
+    # when run from recon/recon/src, point backwards
+    - ../../.gitignore
