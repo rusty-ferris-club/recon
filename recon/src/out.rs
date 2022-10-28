@@ -49,17 +49,8 @@ pub fn to_table(vt: &ValuesTable) -> Result<String> {
     }
 
     let mut table = builder.build();
-
-    if env::var("CI").is_ok() {
-        table.with(tabled::Style::empty());
-        Ok(Regex::new(r#"[ ]+"#)
-            .unwrap()
-            .replace_all(&format!("{}\n", table), " ")
-            .to_string())
-    } else {
-        table.with(tabled::Style::modern());
-        Ok(format!("{}\n", table))
-    }
+    table.with(tabled::Style::modern());
+    Ok(format!("{}\n", table))
 }
 
 /// Convert to a xargs-friendly format (a newline separated list of values)

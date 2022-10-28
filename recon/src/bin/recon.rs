@@ -92,6 +92,12 @@ pub fn command() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("no-style")
+                .long("no-style")
+                .help("Output as a table with no styles")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("fail-some")
                 .long("fail-some")
                 .help("Exit code failure if *some* files are found")

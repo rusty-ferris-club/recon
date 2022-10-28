@@ -16,6 +16,7 @@ Options:
       --xargs                 Output as xargs formatted list
       --json                  Output as JSON
       --csv                   Output as CSV
+      --no-style              Output as a table with no styles
       --fail-some             Exit code failure if *some* files are found
       --fail-none             Exit code failure if *no* files are found
       --verbose               Show logs

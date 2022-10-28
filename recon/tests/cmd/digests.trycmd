@@ -1,9 +1,7 @@
 ```console
-$ recon -c config.yaml -d -q 'select path,sha256,sha512,md5,crc32,simhash,is_binary,bytes_type from files order by path ASC'
- path sha256 sha512 md5 crc32 simhash is_binary bytes_type 
- ./config.yaml 6ab2a968c672c629a6b3e5c869ec2fe5841ae479f36fef15c1af82035c643d60 3d155da3af830096925b98d5959fec6fa866fb88bb50734aa4b7a969e0acc967984796b3ff516be69e491ec78a9a0160b416abf73cae67808e627b51a785d5bc b0b0aef5fe88db4d04f7ff52912e0a3d e093f0ad 6078b9336e0fe939 0 UTF-8 
- ./recon-terminal.gif f7c9dd92d8d161ab2306882d7f469c81304f6ccfcacd5e540e8c96a3fe8bb4cc 638d8900f0753ff17085817cf74e8599823906621f03f4c1f4a30837df10d035b941145c8782b1bb80f56b8574de1394c35e6c59239251de67c4103a300c154f 0d50e7eda5f2478923604f13ad2347c9 fb086bd9 17d8738ed99fb0a8 1 binary 
- ./test.txt a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447 db3974a97f2407b7cae1ae637c0030687a11913274d578492558e39c16c017de84eacdc8c62fe34ee4e12b4b1428817f09b6a2760c3f8a664ceae94d2434a593 6f5902ac237024bdd0c176cb93063dc4 af083b2d 189800440e01092e 0 UTF-8 
-3 of 3 files in [..]ms
+$ recon --csv -c config.yaml -d -q 'select path,sha256,sha512,md5,crc32,simhash,is_binary,bytes_type from files order by path ASC'
+./config.yaml,[..],[..],[..],[..],[..],0,UTF-8
+./recon-terminal.gif,[..],[..],[..],[..],[..],1,binary
+./test.txt,[..],[..],[..],[..],[..],0,UTF-8
 
 ```
