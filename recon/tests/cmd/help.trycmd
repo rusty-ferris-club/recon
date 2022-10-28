@@ -7,13 +7,17 @@ Usage: recon[..] [OPTIONS]
 Options:
   -c, --config <CONFIG_FILE>  Point to a configuration
   -r, --root <ROOT>           Target folder to scan
-  -q, --query <SQL>           Query with SQL [default: "select * from files"]
+  -q, --query <SQL>           Query with SQL
   -f, --file <DB_FILE>        Use a specific DB file (file or :inmem: for in memory) [default: recon.db]
-  -d, --delete                Delete existing cache database before running
-  -u, --update                Update existing cache database
+  -d, --delete                Clear data: delete existing cache database before running
+  -u, --update                Always walk files and update DB before query. Leave off to run query on existing recon.db.
+  -a, --all                   Walk all files (dont consider .gitignore)
+      --no-spinner            Don't display a spinner for progress
       --xargs                 Output as xargs formatted list
       --json                  Output as JSON
       --csv                   Output as CSV
+      --fail-some             Exit code failure if *some* files are found
+      --fail-none             Exit code failure if *no* files are found
       --verbose               Show logs
   -h, --help                  Print help information
   -V, --version               Print version information

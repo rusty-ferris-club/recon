@@ -45,5 +45,10 @@ CREATE TABLE IF NOT EXISTS files (
   simhash_match JSON,
   path_match JSON,
   content_match JSON,
-  yara_match JSON
+  yara_match JSON,
+  
+  computed boolean
 );
+
+CREATE UNIQUE INDEX idx_abs_path 
+ON files (abs_path);

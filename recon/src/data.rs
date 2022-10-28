@@ -8,22 +8,24 @@ use crate::processing::{
     bytes_type, crc32, file_magic, is_archive, is_binary, is_code, is_document, is_ignored,
     is_media, md5, sha256, sha512, simhash,
 };
+use indicatif::{ProgressBar, ProgressStyle};
 use serde_json::json;
+use sqlx::pool::PoolConnection;
 use sqlx::sqlite::SqliteColumn;
 use sqlx::sqlite::SqliteRow;
-use sqlx::{Acquire, Pool, Sqlite};
 use sqlx::{Column, Row, SqlitePool, TypeInfo, Value, ValueRef};
+use sqlx::{Pool, Sqlite};
 
 use anyhow::Context;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
-use sqlx::Transaction;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
-use walkdir::DirEntry;
+use ignore::DirEntry;
 
 use crate::{
     config::ComputedFields,
@@ -57,6 +59,7 @@ macro_rules! process_match {
 pub struct ValuesTable {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<serde_json::Value>>,
+    pub total_rows: u32,
 }
 
 impl ValuesTable {
@@ -155,6 +158,8 @@ pub struct File {
     pub path_match: Option<Json<Match>>,
     pub content_match: Option<Json<Match>>,
     pub yara_match: Option<Json<Match>>,
+
+    pub computed: Option<bool>,
 }
 
 impl File {
@@ -236,6 +241,7 @@ pub fn compute_fields(file: &File, fields: &ComputedFields) -> Result<File> {
     process_match!(simhash_match, fields, f);
     process_match!(path_match, fields, f);
     process_match!(content_match, fields, f);
+
     Ok(f)
 }
 
@@ -248,15 +254,35 @@ pub fn compute_fields(file: &File, fields: &ComputedFields) -> Result<File> {
 pub(crate) async fn compute_fields_and_store(
     files: &[File],
     fields: &ComputedFields,
+    s: &ProgressBar,
     pool: &Pool<Sqlite>,
 ) -> anyhow::Result<()> {
     let mut conn = pool.acquire().await?;
-    let mut txn = conn.begin().await.context("cannot get tx")?;
-    for file in files {
-        let new_file = file.process_fields(fields)?;
-        insert_one(&new_file, &mut txn).await?;
+    s.set_length(files.len() as u64);
+    s.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] {bar:16.cyan/blue} {pos:>7}/{len:7} {msg}",
+        )
+        .unwrap(),
+    );
+    s.set_position(
+        files
+            .iter()
+            .filter(|f| f.computed.unwrap_or_default())
+            .count() as u64,
+    );
+    for file in files.iter().filter(|f| !f.computed.unwrap_or_default()) {
+        // a file may be in DB, but no longer on disk.
+        let mut new_file = if Path::new(&file.abs_path).exists() {
+            file.process_fields(fields)?
+        } else {
+            file.clone()
+        };
+        s.set_message(format!("Computing fields: {}", file.path));
+        new_file.computed = Some(true);
+        insert_one(&new_file, &mut conn).await?;
+        s.inc(1);
     }
-    txn.commit().await.context("cannot commit txn")?;
     Ok(())
 }
 /// Connect and migrate db
@@ -281,7 +307,19 @@ pub(crate) async fn query_files(q: &str, pool: &Pool<Sqlite>) -> anyhow::Result<
     let res = sqlx::query_as::<_, File>(q).fetch_all(&mut conn).await;
     res.context("error while performing query")
 }
-
+/// Query database
+///
+/// # Errors
+///
+/// This function will return an error on db failure
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub(crate) async fn exists(f: &File, conn: &mut PoolConnection<Sqlite>) -> anyhow::Result<bool> {
+    let total_rows: u32 = sqlx::query_scalar("select count(*) from files where abs_path=?")
+        .bind(&f.abs_path)
+        .fetch_one(conn)
+        .await?;
+    Ok(total_rows != 0)
+}
 /// Query database
 ///
 /// # Errors
@@ -291,6 +329,9 @@ pub(crate) async fn query_files(q: &str, pool: &Pool<Sqlite>) -> anyhow::Result<
 pub(crate) async fn query(q: &str, pool: &Pool<Sqlite>) -> anyhow::Result<ValuesTable> {
     let mut conn = pool.acquire().await?;
     let res = sqlx::query(q).fetch_all(&mut conn).await?;
+    let total_rows: u32 = sqlx::query_scalar("select count(*) from files")
+        .fetch_one(&mut conn)
+        .await?;
     let first = res.first();
     first.map_or_else(
         || Ok(ValuesTable::default()),
@@ -312,7 +353,11 @@ pub(crate) async fn query(q: &str, pool: &Pool<Sqlite>) -> anyhow::Result<Values
                 })
                 .collect::<Vec<_>>();
 
-            Ok(ValuesTable { columns, rows })
+            Ok(ValuesTable {
+                columns,
+                rows,
+                total_rows,
+            })
         },
     )
 }
@@ -323,7 +368,7 @@ pub(crate) async fn query(q: &str, pool: &Pool<Sqlite>) -> anyhow::Result<Values
 ///
 /// This function will return an error on db failure
 #[tracing::instrument(level = "trace", skip_all, err)]
-pub(crate) async fn insert_one(f: &File, txn: &mut Transaction<'_, Sqlite>) -> anyhow::Result<()> {
+pub(crate) async fn insert_one(f: &File, txn: &mut PoolConnection<Sqlite>) -> anyhow::Result<()> {
     sqlx::query(
         r#"
             INSERT INTO files (
@@ -372,7 +417,9 @@ pub(crate) async fn insert_one(f: &File, txn: &mut Transaction<'_, Sqlite>) -> a
                             simhash_match,
                             path_match,
                             content_match,
-                            yara_match
+                            yara_match,
+
+                            computed
                 ) VALUES (
                     ?,?,
                     ?,?,?,
@@ -382,7 +429,8 @@ pub(crate) async fn insert_one(f: &File, txn: &mut Transaction<'_, Sqlite>) -> a
                     ?,?,?,
                     ?,?,?,?,?,
                     ?,?,?,?,?,?,?,
-                    ?,?,?,?,?,?,?,?
+                    ?,?,?,?,?,?,?,?,
+                    ?
                 )
                 ON CONFLICT(abs_path) DO UPDATE SET 
                             entry_time=excluded.entry_time,
@@ -429,7 +477,9 @@ pub(crate) async fn insert_one(f: &File, txn: &mut Transaction<'_, Sqlite>) -> a
                             simhash_match=excluded.simhash_match,
                             path_match=excluded.path_match,
                             content_match=excluded.content_match,
-                            yara_match=excluded.yara_match
+                            yara_match=excluded.yara_match,
+
+                            computed=excluded.computed
                             ;
             "#,
     )
@@ -471,6 +521,7 @@ pub(crate) async fn insert_one(f: &File, txn: &mut Transaction<'_, Sqlite>) -> a
     .bind(&f.path_match)
     .bind(&f.content_match)
     .bind(&f.yara_match)
+    .bind(&f.computed)
     .execute(txn)
     .await?;
     Ok(())

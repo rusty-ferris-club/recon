@@ -30,23 +30,26 @@
 ## How to Use
 
 
-
 ```
 $ recon --help
-
 SQL over files with security processing and tests
 
 Usage: recon [OPTIONS]
 
 Options:
   -c, --config <CONFIG_FILE>  Point to a configuration
-  -q, --query <SQL>           Query with SQL [default: "select * from files"]
+  -r, --root <ROOT>           Target folder to scan
+  -q, --query <SQL>           Query with SQL
   -f, --file <DB_FILE>        Use a specific DB file (file or :inmem: for in memory) [default: recon.db]
-  -d, --delete                Delete existing cache database before running
-  -u, --update                Update existing cache database
+  -d, --delete                Clear data: delete existing cache database before running
+  -u, --update                Always walk files and update DB before query. Leave off to run query on existing recon.db.
+  -a, --all                   Walk all files (dont consider .gitignore)
+      --no-spinner            Don't display a spinner for progress
       --xargs                 Output as xargs formatted list
       --json                  Output as JSON
       --csv                   Output as CSV
+      --fail-some             Exit code failure if *some* files are found
+      --fail-none             Exit code failure if *no* files are found
       --verbose               Show logs
   -h, --help                  Print help information
   -V, --version               Print version information
@@ -76,13 +79,19 @@ $ recon -q 'select path,is_binary,mode from files limit 5'
 
 `recon` also caches the metadata it indexes in `recon.db` (an sqlite DB), to avoid re-indexing when you're experimenting with different queries.
 
-To update the cache before runs:
+To query against the cache (fastest, creates the cache if missing):
+
+```
+$ recon -q <your query>
+```
+
+To always update the cache before runs (good for incomplete index runs or changed folders between runs):
 
 ```
 $ recon -u -q <your query>
 ```
 
-To delete the cache and recreate it before runs:
+To delete the cache and recreate it before runs (good for starting from scratch):
 
 ```
 $ recon -d -q <your query>
@@ -292,6 +301,23 @@ $ recon -q <your query> --json | your-http-post-command
 ```
 
 Or you can ship out as CSV using `--csv` or even the `recon.db` file as-is out of the machine.
+
+</details>
+
+<details><summary><b>
+How do I run on large folders or complete disks?
+</b></summary>
+
+`recon` can run without interruption on very large folders. Each run consists of two stages:
+
+1. Walking the file system. Here, we don't know how many files there are, so we're showing number of files indexed and time elapsed.
+2. Processing compute intensive fields. Here we have a list of target files to compute, so we're showing a progress bar.
+
+You can interrupt walking the file system, and resume it later. Use the `-u` flag to make `recon` always update DB before query, this will also make it resume any non-processed file.
+
+```
+$ recon -u <other args>
+```
 
 </details>
 

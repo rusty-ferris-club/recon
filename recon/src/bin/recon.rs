@@ -51,13 +51,26 @@ pub fn command() -> Command {
                 .short('d')
                 .long("delete")
                 .action(ArgAction::SetTrue)
-                .help("Delete existing cache database before running"),
+                .help("Clear data: delete existing cache database before running"),
         )
         .arg(
             Arg::new("update")
                 .short('u')
                 .long("update")
-                .help("Update existing cache database")
+                .action(ArgAction::SetTrue)
+                .help("Always walk files and update DB before query. Leave off to run query on existing recon.db."),
+        )
+        .arg(
+            Arg::new("all")
+                .short('a')
+                .long("all")
+                .help("Walk all files (dont consider .gitignore)")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("no-spinner")
+                .long("no-spinner")
+                .help("Don't display a spinner for progress")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -136,12 +149,15 @@ async fn main() -> anyhow::Result<()> {
             .cloned()
             .expect("should have default set"),
         update: matches.get_flag("update"),
+        all_files: matches.get_flag("all"),
+        no_spinner: matches.get_flag("no-spinner"),
         query: matches.get_one::<String>("query").cloned(),
     };
 
     let res: Result<bool> = match matches.subcommand() {
         None => {
             let t = Instant::now();
+
             let vt = workflow::run(&opts).await?;
 
             let (with_summary, out) = if matches.get_flag("csv") {
@@ -157,7 +173,7 @@ async fn main() -> anyhow::Result<()> {
 
             let len = vt.rows.len();
             if with_summary {
-                eprintln!("{} files in {:?}", len, t.elapsed());
+                eprintln!("{} of {} files in {:?}", len, vt.total_rows, t.elapsed());
             }
 
             // note: negative-positive logic below

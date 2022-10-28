@@ -1,11 +1,14 @@
+#![allow(clippy::struct_excessive_bools)]
 use crate::config::ComputedFields;
 use crate::{config::Config, data};
 use anyhow::{Context, Result};
-use sqlx::{Acquire, Pool, Sqlite};
+use ignore::WalkBuilder;
+use indicatif::{ProgressBar, ProgressStyle};
+use sqlx::{Pool, Sqlite};
 use std::fs;
 use std::path::Path;
+use std::time::Duration;
 use tracing::info;
-use walkdir::WalkDir;
 
 /// Holds options and configuration for a recon run
 pub struct RunOptions {
@@ -15,6 +18,8 @@ pub struct RunOptions {
     pub db_file: String,
     pub pre_delete: bool,
     pub update: bool,
+    pub all_files: bool,
+    pub no_spinner: bool,
     pub query: Option<String>,
 }
 
@@ -59,22 +64,48 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
     let source = &config.source;
 
     info!("db: {}", db_url);
+
     //
     // prefill stage -----------
     //
-    if first_run || opts.update {
-        info!(
-            "updating data. first run: {}, update requested: {}",
-            first_run, opts.update
-        );
+    if first_run {
+        info!("updating data. first run.",);
         data::clear(&pool).await?;
-        walk_and_store(root, &source.default_fields(), &pool).await?;
+        let s = spin(opts.no_spinner);
+        walk_and_store(
+            root,
+            &source.default_fields(),
+            false,
+            opts.all_files,
+            &s,
+            &pool,
+        )
+        .await?;
+        s.finish_and_clear();
+    } else if opts.update {
+        let s = spin(opts.no_spinner);
+        walk_and_store(
+            root,
+            &source.default_fields(),
+            true,
+            opts.all_files,
+            &s,
+            &pool,
+        )
+        .await?;
+        s.finish_and_clear();
     }
-    let res: Vec<data::File> = data::query_files(&source.query(), &pool).await?;
 
     //
     // query stage -----------
     //
+    if first_run || opts.update {
+        let res: Vec<data::File> = data::query_files(&source.query(), &pool).await?;
+        let s = spin(opts.no_spinner);
+        data::compute_fields_and_store(&res[..], &source.computed_fields(), &s, &pool).await?;
+        s.finish_and_clear();
+    }
+
     let default_query = "select * from files".to_string();
     let query = config
         .source
@@ -82,7 +113,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
         .as_ref()
         .or(opts.query.as_ref())
         .unwrap_or(&default_query);
-    data::compute_fields_and_store(&res[..], &source.computed_fields(), &pool).await?;
+
     data::query(query, &pool).await
 }
 
@@ -98,18 +129,44 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
 async fn walk_and_store(
     path: &str,
     fields: &ComputedFields,
+    resume: bool,
+    all_files: bool,
+    s: &ProgressBar,
     pool: &Pool<Sqlite>,
 ) -> anyhow::Result<()> {
+    let mut count = 0;
     let mut conn = pool.acquire().await?;
-    let mut txn = conn.begin().await.context("cannot get tx")?;
-    for entry in WalkDir::new(path) {
+    for entry in WalkBuilder::new(path)
+        .git_ignore(!all_files) // user asked to walk all files. disable gitignore consideration
+        //.ignore(!all_files) // actually, we leave an escape hatch: .ignore. nobody really uses this ordinarily so leave it on.
+        .hidden(false) // always look at hidden files
+        .build()
+    {
         let entry = entry.context("cannot list entry")?;
         if entry.path().is_file() {
-            // before_query
-            let f = data::File::from_entry(&entry)?.process_fields(fields)?;
-            data::insert_one(&f, &mut txn).await?;
+            let mut f = data::File::from_entry(&entry)?;
+            if resume && data::exists(&f, &mut conn).await? {
+                s.set_message(format!("{} files (cached)", count));
+            } else {
+                s.set_message(format!("{} files", count));
+                f = f.process_fields(fields)?;
+                data::insert_one(&f, &mut conn).await?;
+            }
+            count += 1;
         }
     }
-    txn.commit().await.context("cannot commit txn")?;
     Ok(())
+}
+
+fn spin(no_spinner: bool) -> ProgressBar {
+    let pb = if no_spinner {
+        ProgressBar::hidden()
+    } else {
+        ProgressBar::new_spinner()
+    };
+
+    pb.set_style(ProgressStyle::with_template("{spinner} [{elapsed_precise}] {msg}").unwrap());
+    pb.enable_steady_tick(Duration::from_millis(120));
+    pb.set_message("Processing...");
+    pb
 }
