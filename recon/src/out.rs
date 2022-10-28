@@ -1,9 +1,6 @@
-use std::env;
-
 use crate::data::ValuesTable;
 use anyhow::{Context, Result};
 use csv::Writer;
-use regex::Regex;
 
 /// Represent a value as string
 fn repr(col: &serde_json::Value) -> String {

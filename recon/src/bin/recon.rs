@@ -13,6 +13,7 @@ use anyhow::Result;
 use clap::{Arg, Command};
 use std::process::exit;
 
+#[allow(clippy::too_many_lines)]
 pub fn command() -> Command {
     Command::new("recon")
         .version(crate_version!())
