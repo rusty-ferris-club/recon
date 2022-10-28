@@ -1,5 +1,5 @@
 ```console
 $ recon --csv -d -u -q 'select abs_path,size from files order by abs_path ASC'
-[CWD]/test.txt,12
+[..]/test.txt,12
 
 ```
