@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::data::ValuesTable;
 use anyhow::{Context, Result};
 use csv::Writer;
@@ -46,7 +48,12 @@ pub fn to_table(vt: &ValuesTable) -> Result<String> {
 
     let mut table = builder.build();
 
-    table.with(tabled::Style::modern());
+    if env::var("CI").is_ok() {
+        table.with(tabled::Style::empty());
+    } else {
+        table.with(tabled::Style::modern());
+    }
+
     Ok(format!("{}\n", table))
 }
 
