@@ -3,6 +3,7 @@ use std::env;
 use crate::data::ValuesTable;
 use anyhow::{Context, Result};
 use csv::Writer;
+use regex::Regex;
 
 /// Represent a value as string
 fn repr(col: &serde_json::Value) -> String {
@@ -38,6 +39,7 @@ pub fn to_json(vt: &ValuesTable) -> Result<String> {
 /// # Errors
 ///
 /// This function is not expected to error, just conforms to an interface
+#[allow(clippy::missing_panics_doc)]
 pub fn to_table(vt: &ValuesTable) -> Result<String> {
     let mut builder = tabled::builder::Builder::default();
 
@@ -50,11 +52,14 @@ pub fn to_table(vt: &ValuesTable) -> Result<String> {
 
     if env::var("CI").is_ok() {
         table.with(tabled::Style::empty());
+        Ok(Regex::new(r#"[ ]+"#)
+            .unwrap()
+            .replace_all(&format!("{}\n", table), " ")
+            .to_string())
     } else {
         table.with(tabled::Style::modern());
+        Ok(format!("{}\n", table))
     }
-
-    Ok(format!("{}\n", table))
 }
 
 /// Convert to a xargs-friendly format (a newline separated list of values)
