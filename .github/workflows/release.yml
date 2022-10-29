@@ -16,7 +16,7 @@ on:
 env:
   BIN_NAME: recon
   PROJECT_NAME: recon
-  REPO_NAME: jondot/recon
+  REPO_NAME: rusty-ferris-club/recon
   BREW_TAP: rusty-ferris-club/homebrew-tap
 
 jobs:
