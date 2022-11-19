@@ -40,14 +40,16 @@ Options:
   -c, --config <CONFIG_FILE>  Point to a configuration
   -r, --root <ROOT>           Target folder to scan
   -q, --query <SQL>           Query with SQL
-  -f, --file <DB_FILE>        Use a specific DB file (file or :inmem: for in memory) [default: recon.db]
+  -f, --file <DB_FILE>        Use a specific DB file (file or :memory: for in memory) [default: recon.db]
   -d, --delete                Clear data: delete existing cache database before running
   -u, --update                Always walk files and update DB before query. Leave off to run query on existing recon.db.
   -a, --all                   Walk all files (dont consider .gitignore)
-      --no-spinner            Don't display a spinner for progress
+      --no-progress           Don't display progress bars
+  -m, --inmem                 Don't cache index to disk, run in-memory only
       --xargs                 Output as xargs formatted list
       --json                  Output as JSON
       --csv                   Output as CSV
+      --no-style              Output as a table with no styles
       --fail-some             Exit code failure if *some* files are found
       --fail-none             Exit code failure if *no* files are found
       --verbose               Show logs
@@ -95,6 +97,12 @@ To delete the cache and recreate it before runs (good for starting from scratch)
 
 ```
 $ recon -d -q <your query>
+```
+
+To avoid any disk operations and run from memory (no cache):
+
+```
+$ recon -m -q <your query>
 ```
 ### Add processors and/or matchers
 

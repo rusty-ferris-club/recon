@@ -278,7 +278,7 @@ pub(crate) async fn compute_fields_and_store(
         } else {
             file.clone()
         };
-        s.set_message(format!("Computing fields: {}", file.path));
+        s.set_message("Computing fields".to_string());
         new_file.computed = Some(true);
         insert_one(&new_file, &mut conn).await?;
         s.inc(1);

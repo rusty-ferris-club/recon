@@ -57,7 +57,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
         },
         Clone::clone,
     );
-    let first_run = !Path::new(&opts.db_file).exists();
+    let first_run = !Path::new(&opts.db_file).exists() || opts.db_file == ":memory:";
 
     let pool = data::connect(&db_url).await.context("cannot open DB")?;
 

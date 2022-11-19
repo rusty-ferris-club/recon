@@ -45,7 +45,7 @@ pub fn command() -> Command {
                 .long("file")
                 .value_name("DB_FILE")
                 .default_value(recon::DB_FILE)
-                .help("Use a specific DB file (file or :inmem: for in memory)"),
+                .help("Use a specific DB file (file or :memory: for in memory)"),
         )
         .arg(
             Arg::new("delete")
@@ -69,9 +69,16 @@ pub fn command() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("no-spinner")
-                .long("no-spinner")
-                .help("Don't display a spinner for progress")
+            Arg::new("no-progress")
+                .long("no-progress")
+                .help("Don't display progress bars")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("inmem")
+                .short('m')
+                .long("inmem")
+                .help("Don't cache index to disk, run in-memory only")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -151,13 +158,17 @@ async fn main() -> anyhow::Result<()> {
         config: matches.get_one::<String>("config").cloned(),
         pre_delete: matches.get_flag("delete"),
         db_url: env::var("DATABASE_URL").ok(),
-        db_file: matches
-            .get_one::<String>("file")
-            .cloned()
-            .expect("should have default set"),
+        db_file: if matches.get_flag("inmem") {
+            ":memory:".to_string()
+        } else {
+            matches
+                .get_one::<String>("file")
+                .cloned()
+                .expect("should have default set")
+        },
         update: matches.get_flag("update"),
         all_files: matches.get_flag("all"),
-        no_spinner: matches.get_flag("no-spinner"),
+        no_spinner: matches.get_flag("no-progress"),
         query: matches.get_one::<String>("query").cloned(),
     };
 
