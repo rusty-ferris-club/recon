@@ -65,6 +65,9 @@ pub struct Source {
     pub before_computed_fields_query: Option<String>,
 
     #[serde(default)]
+    pub unpack: Option<bool>,
+
+    #[serde(default)]
     pub default_fields: Option<ComputedFields>,
 
     #[serde(default)]

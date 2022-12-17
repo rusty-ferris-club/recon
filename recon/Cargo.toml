@@ -28,6 +28,7 @@ sha2 = "0.10.6"
 md-5 = "0.10.5"
 simhash = "0.2.0"
 yara = { version = "0.16.1", features = ["vendored", "serde"] }
+decompress = "0.1.0"
 
 serde = "1.0.145"
 ignore = "0.4.18"

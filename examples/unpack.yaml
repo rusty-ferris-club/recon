@@ -1,0 +1,17 @@
+#
+# $ recon -c unpack.yaml -q 'select * from files'
+#
+# in this example:
+# - you determine archive file classes by their extension
+# - unpack the archive to allow recon to act on files within the archive
+source:
+  # walk files from the "src/" folder
+  root: "recon/src/"
+
+  default_fields:
+    # array of extensions to test against to tell recon this file is an archive
+    is_archive: 
+    - zip
+  
+  # boolean to instruct recon to unpack files from the archive file class
+  unpack: true
