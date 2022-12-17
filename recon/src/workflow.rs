@@ -63,6 +63,8 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
 
     let source = &config.source;
 
+    let unpack = source.unpack.unwrap_or(false);
+
     info!("db: {}", db_url);
 
     //
@@ -75,6 +77,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
         walk_and_store(
             root,
             &source.default_fields(),
+            unpack,
             false,
             opts.all_files,
             &s,
@@ -87,6 +90,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
         walk_and_store(
             root,
             &source.default_fields(),
+            unpack,
             true,
             opts.all_files,
             &s,
@@ -129,6 +133,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
 async fn walk_and_store(
     path: &str,
     fields: &ComputedFields,
+    unpack: bool,
     resume: bool,
     all_files: bool,
     s: &ProgressBar,
@@ -150,6 +155,12 @@ async fn walk_and_store(
             } else {
                 s.set_message(format!("{} files", count));
                 f = f.process_fields(fields)?;
+                
+                let is_archive = f.is_archive.unwrap_or(false);
+                if unpack && is_archive {
+                    f.unpack()?;
+                }
+
                 data::insert_one(&f, &mut conn).await?;
             }
             count += 1;

@@ -8,6 +8,7 @@ use crate::processing::{
     bytes_type, crc32, file_magic, is_archive, is_binary, is_code, is_document, is_ignored,
     is_media, md5, sha256, sha512, simhash,
 };
+use decompress::{decompress, ExtractOpts, Decompression};
 use indicatif::{ProgressBar, ProgressStyle};
 use serde_json::json;
 use sqlx::pool::PoolConnection;
@@ -206,6 +207,17 @@ impl File {
 
     pub(crate) fn process_fields(&self, fields: &ComputedFields) -> Result<Self> {
         compute_fields(self, fields)
+    }
+
+    pub(crate) fn unpack(&self) -> Result<Decompression> {
+        let file_path = Path::new(&self.abs_path);
+        let extract_to = file_path.parent().unwrap();
+
+        return decompress(
+            file_path, 
+            extract_to, 
+            &ExtractOpts{ strip: 0 }
+        ).context(format!("failed to unpack file {}", file_path.display()));
     }
 }
 
