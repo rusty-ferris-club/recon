@@ -14,7 +14,7 @@ use anyhow::Result;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
-use sqlx_crud::SqlxCrud;
+use sqlx_meta::SqlxMeta;
 use std::collections::HashMap;
 use std::fs;
 
@@ -107,7 +107,7 @@ pub struct Match {
 ///
 /// The main file abstraction. Contains basic file data, metadata, and computed fields
 ///
-#[derive(Default, Debug, Clone, sqlx::FromRow, SqlxCrud)]
+#[derive(Default, Debug, Clone, sqlx::FromRow, SqlxMeta)]
 pub struct File {
     pub id: Option<i32>,
     pub entry_time: String,

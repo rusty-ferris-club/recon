@@ -617,21 +617,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
 
 [[package]]
-name = "futures"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f21eda599937fba36daeb58a22e8f5cee2d14c4a17b5b7739c7c8e5e3b8230c"
-dependencies = [
- "futures-channel",
- "futures-core",
- "futures-executor",
- "futures-io",
- "futures-sink",
- "futures-task",
- "futures-util",
-]
-
-[[package]]
 name = "futures-channel"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -670,23 +655,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "futures-io"
-version = "0.3.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00f5fb52a06bdcadeb54e8d3671f8888a39697dcb0b81b23b55174030427f4eb"
-
-[[package]]
-name = "futures-macro"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42cd15d1c7456c04dbdf7e88bcd69760d74f3a798d6444e16974b505b0e62f17"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "futures-sink"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -704,13 +672,9 @@ version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44fb6cb1be61cc1d2e43b262516aafcf63b241cffdb1d3fa115f91d9c7b09c90"
 dependencies = [
- "futures-channel",
  "futures-core",
- "futures-io",
- "futures-macro",
  "futures-sink",
  "futures-task",
- "memchr",
  "pin-project-lite",
  "pin-utils",
  "slab",
@@ -1380,7 +1344,7 @@ dependencies = [
  "sha2",
  "simhash",
  "sqlx",
- "sqlx-crud",
+ "sqlx-meta",
  "tabled",
  "tokio",
  "tracing",
@@ -1746,30 +1710,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sqlx-crud"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "612f8f69c2d5655fc50b3d081169b8e8bcfe7cdd9c300d1e7605a2c00a0e3b73"
-dependencies = [
- "futures",
- "sqlx",
- "sqlx-crud-macros",
- "thiserror",
-]
-
-[[package]]
-name = "sqlx-crud-macros"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75b4d450c43e653e143b5abfd6e1d82c41993d04f905b0da98af03594cd13c35"
-dependencies = [
- "Inflector",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "sqlx-macros"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1789,6 +1729,29 @@ dependencies = [
  "sqlx-rt",
  "syn",
  "url",
+]
+
+[[package]]
+name = "sqlx-meta"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "802f48ac6c94314571b4b77db5cb628f51f7ef2d55668330b3e2e6cb447d1bc7"
+dependencies = [
+ "sqlx",
+ "sqlx-meta-macros",
+ "thiserror",
+]
+
+[[package]]
+name = "sqlx-meta-macros"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63252debdbbb9a6d6263900ca6598f28b9da6c325c0765f9b06fc6c7d6130b26"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

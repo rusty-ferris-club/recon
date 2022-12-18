@@ -13,9 +13,7 @@ sqlx = { version = "0.6.2", features = [
   "offline",
   "runtime-tokio-native-tls",
 ] }
-sqlx-crud = { version = "*", default-features = false, features = [
-  "runtime-tokio-native-tls",
-] }
+sqlx-meta = "0.1.0"
 
 
 dotenv = "0.15.0"

@@ -7,7 +7,7 @@ use sqlx::{
     sqlite::{SqliteColumn, SqliteRow},
     Column, Pool, Row, Sqlite, SqlitePool, TypeInfo, Value, ValueRef,
 };
-use sqlx_crud::{Crud, Schema};
+use sqlx_meta::{Binds, Schema};
 
 use crate::data::{File, ValuesTable};
 
