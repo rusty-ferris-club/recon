@@ -187,11 +187,11 @@ async fn main() -> anyhow::Result<()> {
             } else {
                 (true, vt.to_table()?)
             };
-            print!("{}", out);
+            print!("{out}");
 
             let len = vt.rows.len();
             if with_summary {
-                eprintln!("{} of {} files in {:?}", len, vt.total_rows, t.elapsed());
+                eprintln!("{len} of {} files in {:?}", vt.total_rows, t.elapsed());
             }
 
             // note: negative-positive logic below
@@ -209,10 +209,10 @@ async fn main() -> anyhow::Result<()> {
 
     match res {
         Ok(ok) => {
-            exit(if ok { 0 } else { 1 });
+            exit(i32::from(!ok));
         }
         Err(err) => {
-            eprintln!("error: {}", err);
+            eprintln!("error: {err}");
             exit(1)
         }
     }

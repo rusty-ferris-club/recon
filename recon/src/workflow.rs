@@ -1,10 +1,11 @@
 #![allow(clippy::struct_excessive_bools)]
 use crate::config::ComputedFields;
+use crate::data::File;
+use crate::db::Db;
 use crate::{config::Config, data};
 use anyhow::{Context, Result};
 use ignore::WalkBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
-use sqlx::{Pool, Sqlite};
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
@@ -59,7 +60,17 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
     );
     let first_run = !Path::new(&opts.db_file).exists() || opts.db_file == ":memory:";
 
-    let pool = data::connect(&db_url).await.context("cannot open DB")?;
+    /*
+    1. fork: consider wrapping under "Db" struct which acquires a pool, etc.
+    (we want raw sql so maybe sqlx better than sea for us here)
+    return opaque DB, Connection and DB::connect()
+    so that if we want to mock it, we can, and swap it, we can.
+    - create a connection + wrap struct
+    - convert one query to the wrapped struct getting it
+
+    2. add a seaorm conn here
+    */
+    let db = Db::connect(&db_url).await?;
 
     let source = &config.source;
 
@@ -70,7 +81,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
     //
     if first_run {
         info!("updating data. first run.",);
-        data::clear(&pool).await?;
+        db.clear().await?;
         let s = spin(opts.no_spinner);
         walk_and_store(
             root,
@@ -78,7 +89,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
             false,
             opts.all_files,
             &s,
-            &pool,
+            &db,
         )
         .await?;
         s.finish_and_clear();
@@ -90,7 +101,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
             true,
             opts.all_files,
             &s,
-            &pool,
+            &db,
         )
         .await?;
         s.finish_and_clear();
@@ -100,9 +111,10 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
     // query stage -----------
     //
     if first_run || opts.update {
-        let res: Vec<data::File> = data::query_files(&source.query(), &pool).await?;
+        let res: Vec<data::File> = db.query_files(&source.query()).await?;
         let s = spin(opts.no_spinner);
-        data::compute_fields_and_store(&res[..], &source.computed_fields(), &s, &pool).await?;
+        // xxx extract this out to workflow
+        compute_fields_and_store(&res[..], &source.computed_fields(), &s, &db).await?;
         s.finish_and_clear();
     }
 
@@ -114,7 +126,7 @@ pub async fn run(opts: &RunOptions) -> Result<data::ValuesTable> {
         .or(opts.query.as_ref())
         .unwrap_or(&default_query);
 
-    data::query(query, &pool).await
+    db.query_table(query).await
 }
 
 /// For a given path, walk a directory tree, and for each file
@@ -132,10 +144,9 @@ async fn walk_and_store(
     resume: bool,
     all_files: bool,
     s: &ProgressBar,
-    pool: &Pool<Sqlite>,
+    db: &Db,
 ) -> anyhow::Result<()> {
     let mut count = 0;
-    let mut conn = pool.acquire().await?;
     for entry in WalkBuilder::new(path)
         .git_ignore(!all_files) // user asked to walk all files. disable gitignore consideration
         //.ignore(!all_files) // actually, we leave an escape hatch: .ignore. nobody really uses this ordinarily so leave it on.
@@ -145,15 +156,55 @@ async fn walk_and_store(
         let entry = entry.context("cannot list entry")?;
         if entry.path().is_file() {
             let mut f = data::File::from_entry(&entry)?;
-            if resume && data::exists(&f, &mut conn).await? {
+            if resume && db.exists(&f).await? {
                 s.set_message(format!("{} files (cached)", count));
             } else {
                 s.set_message(format!("{} files", count));
                 f = f.process_fields(fields)?;
-                data::insert_one(&f, &mut conn).await?;
+                db.insert_one(&f).await?;
             }
             count += 1;
         }
+    }
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub(crate) async fn compute_fields_and_store(
+    files: &[File],
+    fields: &ComputedFields,
+    s: &ProgressBar,
+    db: &Db,
+) -> anyhow::Result<()> {
+    // xxx: move all this to a builder of pb, in out.rs, take the counts
+    s.set_length(files.len() as u64);
+    s.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] {bar:16.cyan/blue} {pos:>7}/{len:7} {msg}",
+        )
+        .unwrap(),
+    );
+    s.set_position(
+        files
+            .iter()
+            .filter(|f| f.computed.unwrap_or_default())
+            .count() as u64,
+    );
+    s.set_message("Computing fields".to_string());
+
+    for file in files.iter().filter(|f| !f.computed.unwrap_or_default()) {
+        // a file may be in DB, but no longer on disk.
+
+        // xxx: move all this inside File
+        let mut new_file = if Path::new(&file.abs_path).exists() {
+            file.process_fields(fields)?
+        } else {
+            file.clone()
+        };
+        new_file.computed = Some(true);
+
+        db.insert_one(&new_file).await?;
+        s.inc(1);
     }
     Ok(())
 }

@@ -100,7 +100,7 @@ pub fn bytes_type(file: &File, fval: &bool) -> Result<Option<String>> {
         return Ok(None);
     }
     let path = Path::new(&file.abs_path);
-    let file = FsFile::open(&path)?;
+    let file = FsFile::open(path)?;
     let mut buffer: Vec<u8> = vec![];
     file.take(MAX_PEEK_SIZE as u64).read_to_end(&mut buffer)?;
     Ok(Some(content_inspector::inspect(&buffer).to_string()))
